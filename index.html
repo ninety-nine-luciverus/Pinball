@@ -1,26 +1,101 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Pinball Physics (Matter.js)</title>
+    <title>Pinball — Advanced Layout</title>
     <style>
         body {
-            background: #111;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #eee;
             display: flex;
-            justify-content: center;
-            margin-top: 20px;
+            height: 100vh;
+            overflow: hidden;
         }
-        canvas {
-            border: 2px solid #555;
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: #111;
+            border-right: 2px solid #333;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .sidebar h2 {
+            margin-top: 0;
+            color: #4fc3f7;
+        }
+
+        .sidebar button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            background: #4fc3f7;
+            border: none;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Main game area */
+        .game-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+        }
+
+        .top-bar {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            font-size: 20px;
+            margin-bottom: 10px;
+            padding: 10px 20px;
+            box-sizing: border-box;
             background: #222;
+            border-bottom: 2px solid #333;
+        }
+
+        canvas {
+            background: #222;
+            border: 2px solid #444;
         }
     </style>
 </head>
+
 <body>
 
-<canvas id="game"></canvas>
+    <!-- Sidebar kiri -->
+    <div class="sidebar">
+        <h2>Pinball Controls</h2>
+        <p>⬅️ Arrow Left — Left Flipper</p>
+        <p>➡️ Arrow Right — Right Flipper</p>
+        <p>Space — Launch Ball</p>
 
-<script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
-<script src="js/game.js"></script>
+        <button onclick="resetGame()">Reset Game</button>
+
+        <h2 style="margin-top: 40px;">Info</h2>
+        <p>Pinball menggunakan <b>Matter.js CDN</b> (tanpa file lokal).</p>
+        <p>Siap dikembangkan ke versi lebih kompleks.</p>
+    </div>
+
+    <!-- Area game -->
+    <div class="game-container">
+        <div class="top-bar">
+            <div>🎮 Pinball Physics</div>
+            <div>Score: <span id="score">0</span></div>
+        </div>
+
+        <canvas id="game" width="450" height="700"></canvas>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
+    <script src="js/game.js"></script>
+
 </body>
 </html>
