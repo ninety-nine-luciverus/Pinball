@@ -1,17 +1,20 @@
-// Setup Matter.js
-const { Engine, Render, Runner, Bodies, Composite, Body, Events, Constraint } = Matter;
+// Matter.js setup
+const {
+    Engine, Render, Runner, Bodies, Body, Composite,
+    Constraint, Events
+} = Matter;
 
 const engine = Engine.create();
 const world = engine.world;
 
-// Canvas setup
-const width = 450;
-const height = 700;
+// Canvas
+const canvas = document.getElementById("game");
+const width = 450, height = 700;
 
+// Render
 const render = Render.create({
-    element: document.body,
-    canvas: document.getElementById("game"),
     engine: engine,
+    canvas: canvas,
     options: {
         width,
         height,
@@ -23,24 +26,60 @@ const render = Render.create({
 Render.run(render);
 Runner.run(Runner.create(), engine);
 
-// Walls
+// -----------------------------
+// GAME STATE
+// -----------------------------
+let gameStarted = false;
+let lives = 5;
+let score = 0;
+
+// UI update
+function updateUI() {
+    document.getElementById("score").innerText = score;
+}
+
+// -----------------------------
+// ARENA
+// -----------------------------
+
+// Dinding mengerucut
+// Kiri dan kanan miring ke dalam
 const walls = [
     Bodies.rectangle(width/2, -10, width, 20, { isStatic: true }),
     Bodies.rectangle(width/2, height+10, width, 20, { isStatic: true }),
-    Bodies.rectangle(-10, height/2, 20, height, { isStatic: true }),
-    Bodies.rectangle(width+10, height/2, 20, height, { isStatic: true })
+
+    // Dinding kiri miring
+    Bodies.rectangle(80, 400, 20, 550, {
+        isStatic: true,
+        angle: -0.25
+    }),
+
+    // Dinding kanan miring
+    Bodies.rectangle(width-80, 400, 20, 550, {
+        isStatic: true,
+        angle: 0.25
+    }),
 ];
+
 Composite.add(world, walls);
 
-// Ball
-const ball = Bodies.circle(width/2, 100, 12, {
-    restitution: 0.9,
-    friction: 0.01,
-    density: 0.002
-});
-Composite.add(world, ball);
+// -----------------------------
+// BALL
+// -----------------------------
+let ball = null;
 
-// Bumper
+function spawnBall() {
+    ball = Bodies.circle(width/2, 120, 12, {
+        restitution: 0.9,
+        friction: 0.002,
+        density: 0.002
+    });
+    Composite.add(world, ball);
+}
+
+// -----------------------------
+// BUMPERS
+// -----------------------------
 function bumper(x, y, r) {
     return Bodies.circle(x, y, r, {
         isStatic: true,
@@ -49,13 +88,15 @@ function bumper(x, y, r) {
 }
 
 Composite.add(world, [
-    bumper(150, 250, 30),
-    bumper(300, 250, 30),
-    bumper(225, 380, 25)
+    bumper(150, 220, 28),
+    bumper(300, 220, 28),
+    bumper(225, 340, 22),
 ]);
 
-// Flippers
-function createFlipper(x, y, isLeft) {
+// -----------------------------
+// FLIPPERS
+// -----------------------------
+function createFlipper(x, y, dir) {
     const flipper = Bodies.rectangle(x, y, 90, 20, {
         render: { fillStyle: "#66ccff" }
     });
@@ -76,16 +117,91 @@ function createFlipper(x, y, isLeft) {
     return flipper;
 }
 
-const leftFlipper = createFlipper(170, 580, true);
-const rightFlipper = createFlipper(280, 580, false);
+const leftFlipper = createFlipper(170, 580, -1);
+const rightFlipper = createFlipper(280, 580, 1);
 
-// Controls
+// FLIPPER CONTROL
 document.addEventListener("keydown", e => {
+    if (!gameStarted) return;
+
     if (e.key === "ArrowLeft") {
         Body.setAngularVelocity(leftFlipper, -1.8);
     }
     if (e.key === "ArrowRight") {
         Body.setAngularVelocity(rightFlipper, 1.8);
     }
+    if (e.code === "Space") {
+        // Launch ball
+        Body.setVelocity(ball, { x: 0, y: -18 });
+    }
 });
 
+// -----------------------------
+// DEATH ZONE
+// -----------------------------
+const deathZone = Bodies.rectangle(width/2, height - 10, width, 20, {
+    isStatic: true,
+    isSensor: true, // bola bisa tembus
+    render: { visible: false }
+});
+Composite.add(world, deathZone);
+
+// Detect ball falling
+Events.on(engine, "collisionStart", event => {
+    event.pairs.forEach(pair => {
+        if (pair.bodyA === deathZone || pair.bodyB === deathZone) {
+            loseLife();
+        }
+    });
+});
+
+// -----------------------------
+// LIFE SYSTEM
+// -----------------------------
+function loseLife() {
+    lives--;
+    Composite.remove(world, ball);
+    
+    if (lives > 0) {
+        spawnBall();
+    } else {
+        gameOver();
+    }
+}
+
+function gameOver() {
+    alert("GAME OVER! Score: " + score);
+    resetGame();
+}
+
+// -----------------------------
+// PUBLIC FUNCTIONS (called from HTML)
+// -----------------------------
+function startGame() {
+    if (gameStarted) return;
+    gameStarted = true;
+    lives = 5;
+    score = 0;
+    updateUI();
+    spawnBall();
+}
+
+function resetGame() {
+    location.reload();
+}
+
+// -----------------------------
+// SIMPLE SCORE SYSTEM
+// -----------------------------
+Events.on(engine, "collisionStart", event => {
+    event.pairs.forEach(pair => {
+        const a = pair.bodyA;
+        const b = pair.bodyB;
+
+        // Bumper hit = +100
+        if (a.label === "Circle Body" && b.isStatic) {
+            score += 100;
+            updateUI();
+        }
+    });
+});
